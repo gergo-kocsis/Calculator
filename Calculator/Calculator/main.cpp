@@ -144,7 +144,7 @@ std::optional<int> calculate(const std::vector<std::string>& expression)
 	// Not enough elements for a proper operation
 	if (expression.size() < 3) return std::nullopt;
 
-	std::stack<std::pair<std::string, int>> opStack;
+	std::stack<std::pair<std::string, std::string>> opStack;
 	int sum = 0;
 	int i = 0;
 
@@ -164,6 +164,18 @@ std::optional<int> calculate(const std::vector<std::string>& expression)
 
 			leftNumber = std::to_string(sum);
 			firstOperator = secondOperator;
+			rightNumber = i < expression.size() ? expression[i++] : "";
+			secondOperator = i < expression.size() ? expression[i++] : "";
+		}
+
+		// The second operator needs to be evaluated before the first one, so store the left hand number and it's operator on the stack
+		else
+		{
+			opStack.push({ leftNumber, firstOperator });
+
+			leftNumber = rightNumber;
+			firstOperator = secondOperator;
+
 			rightNumber = i < expression.size() ? expression[i++] : "";
 			secondOperator = i < expression.size() ? expression[i++] : "";
 		}
