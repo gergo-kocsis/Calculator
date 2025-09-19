@@ -6,7 +6,7 @@
 #include <stack>
 #include <cassert>
 
-std::optional<std::string> exportNextElement(const std::string& stringExpression, const std::string& prevElement, int& i)
+std::optional<std::string> exportNextElement(const std::string& stringExpression, const std::string& prevElement, int& i, std::string& errorMessage)
 {
 	char c = stringExpression[i];
 	std::string ret = "";
@@ -46,10 +46,14 @@ std::optional<std::string> exportNextElement(const std::string& stringExpression
 	}
 
 	// Next valid element could not be found
+	if (i < stringExpression.size())
+	{
+		errorMessage = "Garbage value found";
+	}
 	return std::nullopt;
 }
 
-bool createExpression(const std::string& stringExpression, std::vector<std::string>& expression)
+bool createExpression(const std::string& stringExpression, std::vector<std::string>& expression, std::string& errorMessage)
 {
 	int i = 0;
 	std::string prevElement = "";
@@ -62,14 +66,16 @@ bool createExpression(const std::string& stringExpression, std::vector<std::stri
 
 	while (i < stringExpression.size())
 	{
-		std::optional<std::string> nextElement = exportNextElement(stringExpression, prevElement, i);
+		std::optional<std::string> nextElement = exportNextElement(stringExpression, prevElement, i ,errorMessage);
 		if (!nextElement.has_value())
 		{
-			// expression ends in a number, with an apropriate size, generation successful
+			// Expression ends in a number, with an apropriate size, generation successful
 			if (!numberExpected && expression.size() % 2 == 1)
 				return true;
 
 			// Expression ends in an operator --> not good
+			if(!errorMessage.size())
+				errorMessage = "Expression ends in an operator.";
 			return false;
 		}
 
@@ -81,7 +87,10 @@ bool createExpression(const std::string& stringExpression, std::vector<std::stri
 		else if (el == ")")
 		{
 			if (!levelOfImportance)
-				return false; // ERROR: Too many closing parentheses
+			{
+				errorMessage = "Too many closing parentheses";
+				return false;
+			}
 
 			--levelOfImportance;
 		}
@@ -97,14 +106,28 @@ bool createExpression(const std::string& stringExpression, std::vector<std::stri
 		if (el != "(" && el != ")")
 		{
 			// If we expect a number and get an operator, or expect an operator and get a number, fail the expression generation
-			if ((numberExpected && !std::isdigit(el[el.size() - 1])) || (!numberExpected && std::isdigit(el[el.size() - 1])))
+			if (numberExpected && !std::isdigit(el[el.size() - 1]))
+			{
+				errorMessage = "Expected a number, but got an operator";
 				return false;
+			}
+			else if (!numberExpected && std::isdigit(el[el.size() - 1]))
+			{
+				errorMessage = "Expected an operator, but got a number";
+				return false;
+			}
 
 			numberExpected = !numberExpected; // Flip the flipflop
 
 			expression.push_back(el); // Don't store parentheses, these are replaced by the level of importance
 		}
 		prevElement = el;
+	}
+
+	if (levelOfImportance)
+	{
+		errorMessage = "Parentheses not closed properly";
+		return false;
 	}
 
 	return true;
@@ -156,8 +179,12 @@ int executeOperation(const std::string& firstNumber, const std::string& op, cons
 	}
 }
 
-std::optional<int> calculate(const std::vector<std::string>& expression)
+std::optional<int> calculate(const std::string& stringExpression, std::string& errorMessage)
 {
+	std::vector<std::string> expression;
+	if (!createExpression(stringExpression, expression, errorMessage))
+		return std::nullopt;
+
 	// Not enough elements for a proper operation
 	if (expression.size() < 3) return std::nullopt;
 
@@ -178,8 +205,11 @@ std::optional<int> calculate(const std::vector<std::string>& expression)
 		if (firstOperator >= secondOperator)
 		{
 			// No dividing by or with 0
-			if (firstOperator[0] == '/' && (std::stoi(leftNumber) == 0 || std::stoi(rightNumber) == 0)) 
+			if (firstOperator[0] == '/' && (std::stoi(leftNumber) == 0 || std::stoi(rightNumber) == 0))
+			{
+				errorMessage = "Dividing by or with 0";
 				return std::nullopt;
+			}
 
 			sum = executeOperation(leftNumber, firstOperator, rightNumber);
 
@@ -277,24 +307,15 @@ int main()
 
 	for (std::pair<std::string, int>& tc : testCases)
 	{
-		std::vector<std::string> expression;
-		std::cout << "Expression from \"" << tc.first << "\" created ";
-
-		if (!createExpression(tc.first, expression))
-		{
-			std::cout << "unsuccessfuly. Skipping evaluation." << std::endl;
-			continue;
-		}
-		
-		std::cout << "successfully, and evaluated ";
-		std::optional<int> res = calculate(expression);
+		std::string errorMessage = "";
+		std::optional<int> res = calculate(tc.first, errorMessage);
 		
 		if (!res.has_value())
-			std::cout << "unsuccessfuly, with no result (expected \"" << tc.second << "\")." << std::endl;
+			std::cout << "Calculation unsuccessful, with error \"" << errorMessage << "\" [" << tc.first << "]" << std::endl;
 		else if (res.value() != tc.second)
-			std::cout << "unsuccessfully, where the result \"" << res.value() << "\" does not equal the expected " << tc.second << "." << std::endl;
+			std::cout << "Calculation unsuccessful, since the result \"" << res.value() << "\" does not equal the expected " << tc.second << " [" << tc.first << "]." << std::endl;
 		else
-			std::cout << "succesfully, \"" << res.value() << "\" == \"" << tc.second << "\"." << std::endl;
+			std::cout << "Calculation successful succesfully, \"" << res.value() << "\" == \"" << tc.second << "\". [" << tc.first << "]" << std::endl;
 	}
 
 	std::cout << std::endl << std::endl;
@@ -311,18 +332,12 @@ int main()
 			return 0;
 		}
 
-		std::vector<std::string> expression;
-		if (!createExpression(userInput, expression))
-		{
-			std::cout << "\nNope, try again." << std::endl;
-			continue;
-		}
-
-		std::optional<int> res = calculate(expression);
+		std::string errorMessage = "";
+		std::optional<int> res = calculate(userInput, errorMessage);
 
 		if (!res.has_value())
 		{
-			std::cout << "\nNope, try again." << std::endl;
+			std::cout << "\nUnsuccessful, with error message \"" << errorMessage << "\" try again." << std::endl;
 			continue;
 		}
 
