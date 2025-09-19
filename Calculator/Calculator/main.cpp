@@ -162,10 +162,22 @@ std::optional<int> calculate(const std::vector<std::string>& expression)
 		{
 			sum = executeOperation(leftNumber, firstOperator, rightNumber);
 
-			leftNumber = std::to_string(sum);
-			firstOperator = secondOperator;
-			rightNumber = i < expression.size() ? expression[i++] : "";
-			secondOperator = i < expression.size() ? expression[i++] : "";
+			// First check if the stack has an operation that takes presedence
+			if (opStack.size() && opStack.top().second >= secondOperator)
+			{
+				leftNumber = opStack.top().first;
+				firstOperator = opStack.top().second;
+				rightNumber = std::to_string(sum);
+
+				opStack.pop();
+			}
+			else
+			{
+				leftNumber = std::to_string(sum);
+				firstOperator = secondOperator;
+				rightNumber = i < expression.size() ? expression[i++] : "";
+				secondOperator = i < expression.size() ? expression[i++] : "";
+			}
 		}
 
 		// The second operator needs to be evaluated before the first one, so store the left hand number and it's operator on the stack
