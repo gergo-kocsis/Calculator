@@ -116,15 +116,45 @@ bool operator>=(std::string firstOperator, std::string secondOperator)
 	return true;
 }
 
+int executeOperation(const std::string& firstNumber, const std::string& op, const std::string& secondNumber)
+{
+	int first = std::stoi(firstNumber);
+	int second = std::stoi(secondNumber);
+	char o = op[0];
+
+	switch (o)
+	{
+	case '+':
+		return first + second;
+	case '-':
+		return first - second;
+	case '*':
+		return first * second;
+	case '/':
+		return first / second;
+	default:
+		assert(false); // TODO: DO PROPER
+		break;
+	}
+}
+
 std::optional<int> calculate(const std::vector<std::string>& expression)
 {
+	// Not enough elements for a proper operation
+	if (expression.size() < 3) return std::nullopt;
+
 	std::stack<std::pair<std::string, int>> opStack;
 	int sum = 0;
 	int i = 0;
 
-	while (i < expression.size())
-	{
+	std::string leftNumber = expression[i++];
+	std::string firstOperator = expression[i++];
+	std::string rightNumber = expression[i++];
+	std::string secondOperator = i < expression.size() ? expression[i++] : "";
 
+	while (true)
+	{
+		sum = executeOperation(leftNumber, firstOperator, rightNumber);
 	}
 }
 
@@ -141,6 +171,8 @@ int main()
 		std::vector<std::string> expression;
 		if (!createExpression(tc.first, expression))
 			assert(false);
+
+		std::optional<int> res = calculate(expression);
 	}
 
 	return 0;
