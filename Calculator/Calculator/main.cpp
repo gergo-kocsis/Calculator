@@ -297,5 +297,40 @@ int main()
 			std::cout << "succesfully, \"" << res.value() << "\" == \"" << tc.second << "\"." << std::endl;
 	}
 
+	std::cout << std::endl << std::endl;
+
+	std::string userInput = "";
+
+	while(true) {
+		std::cout << "Now try your own equation (or 'q' to quit): ";
+		userInput = "";
+		std::getline(std::cin, userInput);
+		if ((userInput == "q"))
+		{
+			std::cout << "\n\n\n\n\n\n\nGoodbye! (and hire me pls)\n\n\n\n\n\n\n";
+			return 0;
+		}
+
+		std::vector<std::string> expression;
+		if (!createExpression(userInput, expression))
+		{
+			std::cout << "\nNope, try again." << std::endl;
+			continue;
+		}
+
+		std::optional<int> res = calculate(expression);
+
+		if (!res.has_value())
+		{
+			std::cout << "\nNope, try again." << std::endl;
+			continue;
+		}
+
+		std::cout << "Result: \"" << res.value() << "\"." << std::endl;
+
+	}
+
+
+
 	return 0;
 }
