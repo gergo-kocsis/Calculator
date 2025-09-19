@@ -108,6 +108,7 @@ bool operator>=(std::string firstOperator, std::string secondOperator)
 
 	// If the first operator has more characters than the second operator, it is of higher importance 
 	if (firstOperator.size() > secondOperator.size()) return true;
+	if (firstOperator.size() < secondOperator.size()) return false;
 
 	// Otherwise standard order of operations
 	if ((firstOperator[0] == '+' || firstOperator[0] == '-') && (secondOperator[0] == '*' || secondOperator[0] == '/')) return false;
@@ -152,10 +153,25 @@ std::optional<int> calculate(const std::vector<std::string>& expression)
 	std::string rightNumber = expression[i++];
 	std::string secondOperator = i < expression.size() ? expression[i++] : "";
 
-	while (true)
+	bool expressionEvaluated = false;
+
+	while (!expressionEvaluated)
 	{
-		sum = executeOperation(leftNumber, firstOperator, rightNumber);
+		// Check which operation to execute
+		if (firstOperator >= secondOperator)
+		{
+			sum = executeOperation(leftNumber, firstOperator, rightNumber);
+
+			leftNumber = std::to_string(sum);
+			firstOperator = secondOperator;
+			rightNumber = i < expression.size() ? expression[i++] : "";
+			secondOperator = i < expression.size() ? expression[i++] : "";
+		}
+
+		expressionEvaluated = !rightNumber.size();
 	}
+
+	return sum;
 }
 
 int main()
