@@ -13,7 +13,7 @@ std::optional<std::string> exportNextElement(const std::string& stringExpression
 
 	// Skip spaces, these are ignored
 	while (c == ' ')
-		++i;
+		c = stringExpression[++i];
 
 	// These operators can exist on their own, and can be returned
 	if (c == '+' || c == '*' || c == '/' || c == '(' || c == ')')
@@ -35,7 +35,7 @@ std::optional<std::string> exportNextElement(const std::string& stringExpression
 	}
 
 	// Extract every digit of a number
-	else if (std::isdigit(c))
+	if (std::isdigit(c))
 	{
 		while (std::isdigit(c))
 		{
@@ -57,12 +57,21 @@ bool createExpression(const std::string& stringExpression, std::vector<std::stri
 	// This will determine how important operators are. Each bracket will increase the importance by one.
 	int levelOfImportance = 0;
 
+	bool numberExpected = true; // Flipflop (expression needs a number, then an operator, etc.)
+
 
 	while (i < stringExpression.size())
 	{
 		std::optional<std::string> nextElement = exportNextElement(stringExpression, prevElement, i);
 		if (!nextElement.has_value())
+		{
+			// expression ends in a number, with an apropriate size, generation successful
+			if (!numberExpected && expression.size() % 2 == 1)
+				return true;
+
+			// Expression ends in an operator --> not good
 			return false;
+		}
 
 		std::string el = nextElement.value();
 
@@ -85,8 +94,16 @@ bool createExpression(const std::string& stringExpression, std::vector<std::stri
 				el += op;
 		}
 
-		if(el != "(" && el != ")")
+		if (el != "(" && el != ")")
+		{
+			// If we expect a number and get an operator, or expect an operator and get a number, fail the expression generation
+			if ((numberExpected && !std::isdigit(el[el.size() - 1])) || (!numberExpected && std::isdigit(el[el.size() - 1])))
+				return false;
+
+			numberExpected = !numberExpected; // Flip the flipflop
+
 			expression.push_back(el); // Don't store parentheses, these are replaced by the level of importance
+		}
 		prevElement = el;
 	}
 
@@ -160,6 +177,10 @@ std::optional<int> calculate(const std::vector<std::string>& expression)
 		// Check which operation to execute
 		if (firstOperator >= secondOperator)
 		{
+			// No dividing by or with 0
+			if (firstOperator[0] == '/' && (std::stoi(leftNumber) == 0 || std::stoi(rightNumber) == 0)) 
+				return std::nullopt;
+
 			sum = executeOperation(leftNumber, firstOperator, rightNumber);
 
 			// First check if the stack has an operation that takes presedence
@@ -202,6 +223,7 @@ int main()
 {
 	std::vector<std::pair<std::string, int>> testCases =
 	{
+		// Successful ones -- proper formatting
 		{"1+2", 3},
 		{"1-2", -1},
 		{"2*2", 4},
@@ -212,8 +234,45 @@ int main()
 		{"1+2-3*4/6+7-8*9/10", 1},
 		{"1+(2-3)", 0},
 		{"((1+2)-3)", 0},
+		{"(-1-2)-(3-10)", 4},
 		{"(1+2)-(3*9)*88", -2373},
-		{"((1+2)-3)*4/((6+7)-(8*9))/10", 0},
+		{"((1+2)-31)*4/((6+7)-(8*9))/10", 0},
+		{"((125*34-789)/56+(882-945*2)*31-162)/(333-587*6)+147-274*89/111+(199-237)*421/93-(310-629/77)+552-131", -116},
+
+		// Successful ones -- odd formatting
+		{"1   +2", 3},
+		{"1  -2", -1},
+		{"       2*   2", 4},
+		{"4/2", 2},
+		{"2 + 3  *  5     ", 17},
+		{"2   *3- 5", 1},
+		{"10+2*3-5", 11},
+		{"1+2 -3*4/6+7-8*9/10", 1},
+		{"     1   +   (        2-3)", 0},
+		{"((1   +2)-3)", 0},
+		{"(    -1-2)-    (3-10)", 4},
+		{"                                     (1+2    )-(3*9)*88  ", -2373},
+		{"(    (   1+2)-31)*   4/((6+7)-   (8*9  )     )/10", 0},
+
+		// Successful ones, but I put the wrong result
+		{"1+1", 0},
+		{"85*8581", 0},
+		{"1+2+3+4+5+6+7+8+9-7-4-4-45+54+45-45+54+576-465-46+64-64-4+43+64-46+43", 0},
+
+		// Unsuccessful ones -- nan
+		{"1/0", 0},
+		{"0/1", 0},
+		{"(1-1)/0", 0},
+		{"0/(1-1)", 0},
+
+		// Unsuccessful ones -- unacceptable operations
+		{"1 1", 0},
+		{"1++1", 0},
+		{"1*/1", 0},
+		{"*5+5", 0},
+		{"2*3-5*a", 0},
+		{"I like kebab", 0}
+
 	};
 
 	for (std::pair<std::string, int>& tc : testCases)
@@ -223,7 +282,7 @@ int main()
 
 		if (!createExpression(tc.first, expression))
 		{
-			std::cout << "unsuccessfuly. Skipping evaluation."; 
+			std::cout << "unsuccessfuly. Skipping evaluation." << std::endl;
 			continue;
 		}
 		
