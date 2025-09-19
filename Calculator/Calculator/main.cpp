@@ -17,7 +17,10 @@ std::optional<std::string> exportNextElement(const std::string& stringExpression
 
 	// These operators can exist on their own, and can be returned
 	if (c == '+' || c == '*' || c == '/' || c == '(' || c == ')')
+	{
+		++i; 
 		return std::string{ c };
+	}
 
 	// If the next character is a '-', we need to check that it's in a valid place
 	else if (c == '-' && (prevElement == "" || prevElement == "("))
@@ -31,7 +34,8 @@ std::optional<std::string> exportNextElement(const std::string& stringExpression
 	{
 		while (std::isdigit(c))
 		{
-			ret += stringExpression[i++];
+			ret += c;
+			c = stringExpression[++i];
 		}
 		return ret;
 	}
