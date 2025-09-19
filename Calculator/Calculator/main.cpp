@@ -93,12 +93,47 @@ bool createExpression(const std::string& stringExpression, std::vector<std::stri
 	return true;
 }
 
+/*
+*	Operator importance is as follows:
+*	- Equal number of digits: [+,-] < [*,/]
+*	- Unequal number of operators [++,--] > [*,/] (note, the first operators are inside parentheses
+*/
+
+// This function will determine, if the left or right operator takes more importance
+bool operator>=(std::string firstOperator, std::string secondOperator)
+{
+	// If the second operator is not valid, we can be sure that it is less than or equal to the first operator
+	if (secondOperator == "") return true;
+	if (firstOperator == "" && secondOperator != "") return false;
+
+	// If the first operator has more characters than the second operator, it is of higher importance 
+	if (firstOperator.size() > secondOperator.size()) return true;
+
+	// Otherwise standard order of operations
+	if ((firstOperator[0] == '+' || firstOperator[0] == '-') && (secondOperator[0] == '*' || secondOperator[0] == '/')) return false;
+
+	// Any other case is true
+	return true;
+}
+
+std::optional<int> calculate(const std::vector<std::string>& expression)
+{
+	std::stack<std::pair<std::string, int>> opStack;
+	int sum = 0;
+	int i = 0;
+
+	while (i < expression.size())
+	{
+
+	}
+}
+
 int main()
 {
 	std::vector<std::pair<std::string, int>> testCases =
 	{
 		{"1+2", 3},
-		{"1+(2-3)", 3},
+		{"1+(2-3)", 0},
 	};
 
 	for (std::pair<std::string, int>& tc : testCases)
