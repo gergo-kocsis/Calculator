@@ -22,11 +22,16 @@ std::optional<std::string> exportNextElement(const std::string& stringExpression
 		return std::string{ c };
 	}
 
-	// If the next character is a '-', we need to check that it's in a valid place
+	// If the next character is a '-', we need to check whether it denotes a negative number, or a minus operator
 	else if (c == '-' && (prevElement == "" || prevElement == "("))
 	{
 		ret += c;
 		c = stringExpression[++i]; // Part of a negative number, now let's check for a number
+	}
+	else if (c == '-')
+	{
+		++i;
+		return std::string{ c };
 	}
 
 	// Extract every digit of a number
@@ -48,14 +53,41 @@ bool createExpression(const std::string& stringExpression, std::vector<std::stri
 {
 	int i = 0;
 	std::string prevElement = "";
+
+	// This will determine how important operators are. Each bracket will increase the importance by one.
+	int levelOfImportance = 0;
+
+
 	while (i < stringExpression.size())
 	{
 		std::optional<std::string> nextElement = exportNextElement(stringExpression, prevElement, i);
 		if (!nextElement.has_value())
 			return false;
 
-		expression.push_back(nextElement.value());
-		prevElement = nextElement.value();
+		std::string el = nextElement.value();
+
+		// Alter level of importance
+		if (el == "(")
+			++levelOfImportance;
+		else if (el == ")")
+		{
+			if (!levelOfImportance)
+				return false; // ERROR: Too many closing parentheses
+
+			--levelOfImportance;
+		}
+
+		// Denote importance of operator, depending on level of importnace
+		if ((el == "+" || el == "-" || el == "*" || el == "/") && levelOfImportance)
+		{
+			std::string op = el;
+			for (int j = 0; j < levelOfImportance; ++j)
+				el += op;
+		}
+
+		if(el != "(" && el != ")")
+			expression.push_back(el); // Don't store parentheses, these are replaced by the level of importance
+		prevElement = el;
 	}
 
 	return true;
@@ -66,6 +98,7 @@ int main()
 	std::vector<std::pair<std::string, int>> testCases =
 	{
 		{"1+2", 3},
+		{"1+(2-3)", 3},
 	};
 
 	for (std::pair<std::string, int>& tc : testCases)
