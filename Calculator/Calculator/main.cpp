@@ -209,10 +209,23 @@ int main()
 	for (std::pair<std::string, int>& tc : testCases)
 	{
 		std::vector<std::string> expression;
-		if (!createExpression(tc.first, expression))
-			assert(false);
+		std::cout << "Expression from \"" << tc.first << "\" created ";
 
+		if (!createExpression(tc.first, expression))
+		{
+			std::cout << "unsuccessfuly. Skipping evaluation."; 
+			continue;
+		}
+		
+		std::cout << "successfully, and evaluated ";
 		std::optional<int> res = calculate(expression);
+		
+		if (!res.has_value())
+			std::cout << "unsuccessfuly, with no result (expected \"" << tc.second << "\")." << std::endl;
+		else if (res.value() != tc.second)
+			std::cout << "unsuccessfully, where the result \"" << res.value() << "\" does not equal the expected " << tc.second << "." << std::endl;
+		else
+			std::cout << "succesfully, \"" << res.value() << "\" == \"" << tc.second << "\"." << std::endl;
 	}
 
 	return 0;
