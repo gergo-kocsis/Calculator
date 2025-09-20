@@ -136,7 +136,7 @@ bool createExpression(const std::string& stringExpression, std::vector<std::stri
 /*
 *	Operator importance is as follows:
 *	- Equal number of digits: [+,-] < [*,/]
-*	- Unequal number of operators [++,--] > [*,/] (note, the first operators are inside parentheses
+*	- Unequal number of operators [++,--] > [*,/] (note, the first operators are inside parentheses)
 */
 
 // This function will determine, if the left or right operator takes more importance
@@ -174,7 +174,7 @@ int executeOperation(const std::string& firstNumber, const std::string& op, cons
 	case '/':
 		return first / second;
 	default:
-		assert(false); // TODO: DO PROPER
+		assert(false); // Can never happen
 		break;
 	}
 }
@@ -185,8 +185,8 @@ std::optional<int> calculate(const std::string& stringExpression, std::string& e
 	if (!createExpression(stringExpression, expression, errorMessage))
 		return std::nullopt;
 
-	// Not enough elements for a proper operation
-	if (expression.size() < 3) return std::nullopt;
+	// Not enough elements for a proper operation (can never happen, since we check for (number, operator, number) sequence)
+	if (expression.size() < 3) assert(false);
 
 	std::stack<std::pair<std::string, std::string>> opStack;
 	int sum = 0;
@@ -315,7 +315,7 @@ int main()
 		else if (res.value() != tc.second)
 			std::cout << "Calculation unsuccessful, since the result \"" << res.value() << "\" does not equal the expected " << tc.second << " [" << tc.first << "]." << std::endl;
 		else
-			std::cout << "Calculation successful succesfully, \"" << res.value() << "\" == \"" << tc.second << "\". [" << tc.first << "]" << std::endl;
+			std::cout << "Calculation successful, \"" << res.value() << "\" == \"" << tc.second << "\". [" << tc.first << "]" << std::endl;
 	}
 
 	std::cout << std::endl << std::endl;
@@ -344,8 +344,6 @@ int main()
 		std::cout << "Result: \"" << res.value() << "\"." << std::endl;
 
 	}
-
-
 
 	return 0;
 }
